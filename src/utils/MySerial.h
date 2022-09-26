@@ -17,8 +17,21 @@ public:
 
     MySerial(const MySerial& other) = delete;
     MySerial& operator=(const MySerial& other) = delete;
-    MySerial(MySerial&& other) = delete;
-    MySerial& operator=(MySerial&& other) = delete;
+    MySerial(MySerial&& other) : m_ioHandle(other.m_ioHandle)
+                                 m_connected(other.m_connected)
+    {
+        other.m_ioHandle = nullptr;
+        other.m_connected = false;
+    }
+    MySerial& operator=(MySerial&& other)
+    {
+        if (this == &other)
+            return *this;
+        
+        std::swap(m_ioHandle, other.m_ioHandle);
+        m_connected = other.m_connected;
+        return *this;
+    }
 
     bool WriteSerialPort(const std::string& data)
     {
