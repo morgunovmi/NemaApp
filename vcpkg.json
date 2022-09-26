@@ -1,0 +1,11 @@
+{
+    "name": "nema-app",
+    "version": "0.0.1",
+    "dependencies": ["sfml",
+        {
+            "name": "imgui",
+            "default-features": false,
+            "features": [ "docking-experimental" ]
+        },
+        "imgui-sfml", "fmt", "spdlog", "range-v3"]
+}
