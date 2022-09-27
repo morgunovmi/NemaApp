@@ -26,7 +26,7 @@ find_package(nlohmann_json REQUIRED)
 set(SFML_LIBS sfml-graphics sfml-system sfml-window)
 
 set(APP_NAME "App")
-set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_SOURCE_DIR}/resources/images/cam_icon.rc")
+set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_SOURCE_DIR}/resources/images/stepper.rc")
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 add_executable(${APP_NAME} ${APP_ICON_RESOURCE_WINDOWS})

@@ -59,6 +59,6 @@ namespace nema
         /// mutex for texture synchronisation
         std::mutex m_textureMutex;
 
-        const std::string ICON_PATH = "./resources/images/cam_icon.png";
+        const std::string ICON_PATH = "./resources/images/stepper.png";
     };
 }// namespace nema
