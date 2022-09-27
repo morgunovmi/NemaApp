@@ -21,6 +21,7 @@ find_package(ImGui-SFML REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(fmt)
 find_package(range-v3)
+find_package(nlohmann_json REQUIRED)
 
 set(SFML_LIBS sfml-graphics sfml-system sfml-window)
 
@@ -53,6 +54,7 @@ target_link_libraries(
         fmt::fmt-header-only
         spdlog::spdlog_header_only
         OneCore
+        nlohmann_json::nlohmann_json
 )
 
 file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

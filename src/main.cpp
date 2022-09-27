@@ -26,7 +26,8 @@ int main(int argc, char** argv)
         std::vector<spdlog::sink_ptr> sinks{ sink, console_sink, file_sink };
         auto MyLogger = std::make_shared<spdlog::logger>(
             "MyLogger", sinks.begin(), sinks.end());
-        MyLogger->set_pattern(">> [%T] {%t} (%^%l%$) %v <<");
+//        MyLogger->set_pattern(">> [%T] {%t} (%^%l%$) %v <<");
+        MyLogger->set_pattern(">> (%^%l%$) %v <<");
 
 #ifndef NDEBUG
         MyLogger->set_level(spdlog::level::trace);

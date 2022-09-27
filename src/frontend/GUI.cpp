@@ -5,8 +5,8 @@
 
 #include "../utils/MySerial.h"
 #include "GUI.h"
+#include "arduino/MyMotor.h"
 
-//TODO Disabled blocks
 namespace nema
 {
     void GUI::Init()
@@ -103,15 +103,6 @@ namespace nema
                         case sf::Keyboard::LAlt:
                             m_bShowMainMenuBar = !m_bShowMainMenuBar;
                             break;
-                        case sf::Keyboard::F1:
-                            m_bShowVideoProcessor = !m_bShowVideoProcessor;
-                            break;
-                        case sf::Keyboard::F2:
-                            m_bShowFrameInfoOverlay = !m_bShowFrameInfoOverlay;
-                            break;
-                        case sf::Keyboard::F3:
-                            m_bShowImageViewer = !m_bShowImageViewer;
-                            break;
                         default:
                             break;
                     }
@@ -134,74 +125,12 @@ namespace nema
         }
     }
 
-    void GUI::ShowFrameInfoOverlay()
-    {
-        static int corner = 1;
-        auto window_flags = ImGuiWindowFlags_NoDecoration |
-                            ImGuiWindowFlags_AlwaysAutoResize |
-                            ImGuiWindowFlags_NoSavedSettings |
-                            ImGuiWindowFlags_NoFocusOnAppearing |
-                            ImGuiWindowFlags_NoNav;
-        if (corner != -1)
-        {
-            const auto PAD = 10.0f;
-            const auto* viewport = ImGui::GetMainViewport();
-            auto work_pos =
-                    viewport->WorkPos;// Use work area to avoid menu-bar/task-bar, if any!
-            auto work_size = viewport->WorkSize;
-            ImVec2 window_pos, window_pos_pivot;
-            window_pos.x = (corner & 1) ? (work_pos.x + work_size.x - PAD)
-                                        : (work_pos.x + PAD);
-            window_pos.y = (corner & 2) ? (work_pos.y + work_size.y - PAD)
-                                        : (work_pos.y + PAD);
-            window_pos_pivot.x = (corner & 1) ? 1.0f : 0.0f;
-            window_pos_pivot.y = (corner & 2) ? 1.0f : 0.0f;
-            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always,
-                                    window_pos_pivot);
-            window_flags |= ImGuiWindowFlags_NoMove;
-        }
-        ImGui::SetNextWindowBgAlpha(0.35f);// Transparent background
-        if (ImGui::Begin("FrameInfoOverlay", &m_bShowFrameInfoOverlay,
-                         window_flags))
-        {
-            ImGui::Text("Frame info");
-            ImGui::Separator();
-            ImGui::Text("Frametime: %d ms\nFPS: %.3f", m_dt.asMilliseconds(),
-                        1.f / m_dt.asSeconds());
-            ImGui::PlotLines("Frame Times", &m_frameTimeQueue.front(),
-                             static_cast<int>(m_frameTimeQueue.size()), 0,
-                             nullptr, FLT_MAX, FLT_MAX, ImVec2{100, 40});
-
-            if (ImGui::BeginPopupContextWindow())
-            {
-                if (ImGui::MenuItem("Custom", nullptr, corner == -1))
-                    corner = -1;
-                if (ImGui::MenuItem("Top-left", nullptr, corner == 0))
-                    corner = 0;
-                if (ImGui::MenuItem("Top-right", nullptr, corner == 1))
-                    corner = 1;
-                if (ImGui::MenuItem("Bottom-left", nullptr, corner == 2))
-                    corner = 2;
-                if (ImGui::MenuItem("Bottom-right", nullptr, corner == 3))
-                    corner = 3;
-                if (ImGui::MenuItem("Close")) m_bShowFrameInfoOverlay = false;
-                ImGui::EndPopup();
-            }
-        }
-        ImGui::End();
-    }
-
     void GUI::ShowMainMenuBar()
     {
         if (ImGui::BeginMainMenuBar())
         {
             if (ImGui::BeginMenu("Windows"))
             {
-                if (ImGui::MenuItem("Viewport", nullptr, &m_bShowViewport)) {}
-                if (ImGui::MenuItem("Frame Info", "F2",
-                                    &m_bShowFrameInfoOverlay))
-                {
-                }
                 if (ImGui::MenuItem("Serial Controller", nullptr,
                                     &m_bShowSerial))
                 {
@@ -209,25 +138,8 @@ namespace nema
                 if (ImGui::MenuItem("App Log", nullptr, &m_bShowAppLog)) {}
                 ImGui::EndMenu();
             }
-
-            if (ImGui::BeginMenu("Help"))
-            {
-                if (ImGui::MenuItem("Show Help", nullptr, &m_bShowHelp)) {}
-                ImGui::EndMenu();
-            }
             ImGui::EndMainMenuBar();
         }
-    }
-
-    void GUI::ShowViewport()
-    {
-        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
-        if (ImGui::Begin("Viewport", &m_bShowViewport, windowFlags))
-        {
-            std::scoped_lock lock{m_textureMutex};
-            ImGui::Image(m_currentTexture);
-        }
-        ImGui::End();
     }
 
     void GUI::ShowAppLog()
@@ -249,10 +161,9 @@ namespace nema
         ImGui::DockSpaceOverViewport();
 
         if (m_bShowMainMenuBar) ShowMainMenuBar();
-        if (m_bShowViewport) ShowViewport();
-        if (m_bShowFrameInfoOverlay) ShowFrameInfoOverlay();
         if (m_bShowAppLog) ShowAppLog();
         if (m_bShowSerial) ShowSerialPort();
+        if (m_bShowMotors) ShowMotorControls();
 
 #ifndef NDEBUG
         ImGui::ShowDemoWindow();
@@ -266,7 +177,7 @@ namespace nema
 
     void GUI::ShowSerialPort()
     {
-        if (ImGui::Begin("Serial Controller", &m_bShowImageViewer))
+        if (ImGui::Begin("Serial Controller", &m_bShowSerial))
         {
             ULONG size = 10;
             std::vector<ULONG> coms(size);
@@ -282,13 +193,6 @@ namespace nema
                                     { return fmt::format("COM{}", comNum); }) |
                             ::ranges::to<std::vector<std::string>>();
 
-            /*
-            static SimpleSerial serial(
-                    (char*) fmt::format("\\\\.\\{}",
-                                        portStrs[portStrs.size() - 1])
-                            .c_str(),
-                    CBR_9600);
-                    */
             static MySerial serial(
                     fmt::format("\\\\.\\{}", portStrs[portStrs.size() - 1]),
                     CBR_9600);
@@ -315,18 +219,17 @@ namespace nema
                                   portStrs[currentPort]);
                 }
 
-                spdlog::info("{}", serial.ReadSerialPort(100, 1));
+                spdlog::info("{}", serial.ReadSerialPort());
             }
 
             static std::string toSend{};
             ImGui::InputTextWithHint("Send to serial port", nullptr, &toSend);
             if (ImGui::IsItemDeactivatedAfterEdit() && !toSend.empty())
             {
-                spdlog::info("{}", serial.IsConnected());
                 if (serial.WriteSerialPort(toSend))
                 {
                     spdlog::info("Sent \"{}\"\nReceived {}", toSend,
-                                 serial.ReadSerialPort(100, 1));
+                                 serial.ReadSerialPort());
                 }
                 else
                 {
@@ -334,6 +237,134 @@ namespace nema
                 }
             }
             ImGui::PopItemWidth();
+        }
+        ImGui::End();
+    }
+
+    void GUI::ShowMotorControls()
+    {
+        if (ImGui::Begin("Motor Controls", &m_bShowMotors))
+        {
+            ULONG size = 10;
+            std::vector<ULONG> coms(size);
+            ULONG found = 0;
+
+            GetCommPorts(coms.data(), size, &found);
+            ::ranges::sort(coms.begin(), coms.end());
+            auto portStrs = coms |
+                            ::ranges::views::filter([](auto comNum)
+                                                    { return comNum != 0; }) |
+                            ::ranges::views::transform(
+                                    [](auto comNum)
+                                    { return fmt::format("COM{}", comNum); }) |
+                            ::ranges::to<std::vector<std::string>>();
+
+            static MyMotor motor1{
+                    fmt::format("\\\\.\\{}", portStrs[portStrs.size() - 2]),
+                    CBR_9600};
+
+            static MyMotor motor2{
+                    fmt::format("\\\\.\\{}", portStrs[portStrs.size() - 1]),
+                    CBR_9600};
+
+            static int currentPort1 = portStrs.size() - 2;
+            static int currentPort2 = portStrs.size() - 1;
+            ImGui::PushItemWidth(m_inputFieldWidth);
+            Combo("Motor 1 Port", &currentPort1, portStrs, portStrs.size());
+            ImGui::SameLine();
+            Combo("Motor 2 Port", &currentPort2, portStrs, portStrs.size());
+
+            if (ImGui::Button("Connect 1"))
+            {
+                motor1.Connect(fmt::format("\\\\.\\{}", portStrs[currentPort1]),
+                               CBR_9600);
+
+                if (motor1.IsConnected())
+                {
+                    spdlog::info("Connected to {} successfully",
+                                 portStrs[currentPort1]);
+                }
+                else
+                {
+                    spdlog::error("Couldn't connect to {}",
+                                  portStrs[currentPort1]);
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Connect 2"))
+            {
+                motor2.Connect(fmt::format("\\\\.\\{}", portStrs[currentPort2]),
+                               CBR_9600);
+
+                if (motor2.IsConnected())
+                {
+                    spdlog::info("Connected to {} successfully",
+                                 portStrs[currentPort2]);
+                }
+                else
+                {
+                    spdlog::error("Couldn't connect to {}",
+                                  portStrs[currentPort2]);
+                }
+            }
+
+            static float speed1 = 1000;
+            ImGui::DragFloat("Speed 1", &speed1, 0.5, 0, 5000);
+            ImGui::SameLine();
+            static float speed2 = 1000;
+            ImGui::DragFloat("Speed 2", &speed2, 0.5, 0, 5000);
+
+            static float amount1 = 1000;
+            ImGui::DragFloat("Amount 1", &amount1, 0.5, 0, 10000);
+            ImGui::SameLine();
+            static float amount2 = 1000;
+            ImGui::DragFloat("Amount 2", &amount2, 0.5, 0, 10000);
+
+            if (ImGui::Button("Forward 1"))
+            {
+                motor1.Go(-amount1, speed1);
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Button("Forward 2"))
+            {
+                motor2.Go(amount2, speed2);
+            }
+
+            if (ImGui::Button("Back 1"))
+            {
+                motor1.Go(amount1, speed1);
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Button("Back 2"))
+            {
+                motor2.Go(-amount2, speed2);
+            }
+
+            if (ImGui::Button("Forward Both"))
+            {
+                motor1.Go(-amount1, speed1);
+                motor2.Go(amount2, speed2);
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Button("Back Both"))
+            {
+                motor1.Go(amount1, speed1);
+                motor2.Go(-amount2, speed2);
+            }
+
+            if (ImGui::Button("Stop 1"))
+            {
+                motor1.Stop();
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Button("Stop 2"))
+            {
+                motor2.Stop();
+            }
         }
         ImGui::End();
     }

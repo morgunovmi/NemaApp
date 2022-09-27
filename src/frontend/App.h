@@ -3,9 +3,9 @@
 #include <SFML/Graphics.hpp>
 #include <spdlog/spdlog.h>
 
-#include "Renderer.h"
-#include "GUI.h"
 #include "../misc/Log.h"
+#include "GUI.h"
+#include "Renderer.h"
 
 namespace nema
 {
@@ -19,10 +19,8 @@ namespace nema
             const sf::ContextSettings& settings, Log& log)
             : m_window(sf::VideoMode{width, height}, "Nema App",
                        sf::Style::Default, settings),
-              m_deltaClock(), m_dt(), m_currentTexture(), m_textureMutex(),
               m_renderer(m_window),
-              m_gui(m_window, m_dt, log, m_currentTexture,
-                    m_textureMutex)
+              m_gui(m_window, m_dt, log, m_currentTexture, m_textureMutex)
         {
             sf::Image icon{};
             if (!icon.loadFromFile(ICON_PATH))
@@ -63,4 +61,4 @@ namespace nema
 
         const std::string ICON_PATH = "./resources/images/cam_icon.png";
     };
-}// namespace prm
+}// namespace nema

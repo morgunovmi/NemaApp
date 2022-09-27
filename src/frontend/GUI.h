@@ -17,9 +17,9 @@ namespace nema
         GUI(sf::RenderWindow& window, sf::Time& dt, Log& log,
             sf::Texture& texture, std::mutex& mutex)
             : m_window(window), m_dt(dt), m_bShowMainMenuBar(true),
-              m_bShowAppLog(true), m_bShowViewport(true), m_appLog(log),
+              m_bShowAppLog(true), m_appLog(log),
               m_hubballiFont(), m_currentTexture(texture),
-              m_textureMutex(mutex), m_bShowSerial(false)
+              m_textureMutex(mutex), m_bShowSerial(false), m_bShowMotors(true)
         {
         }
 
@@ -55,16 +55,6 @@ namespace nema
         void ShowMainMenuBar();
 
         /**
-         * Draws the latest captured image from the camera
-         */
-        void ShowViewport();
-
-        /**
-         * Draws the frame time info plot in separate window
-         */
-        void ShowFrameInfoOverlay();
-
-        /**
          * Draws log with all the application output
          */
         void ShowAppLog();
@@ -73,6 +63,8 @@ namespace nema
          * Draws serial port control window
          */
         void ShowSerialPort();
+
+        void ShowMotorControls();
 
         /**
          * Helper to display a little (?) mark which shows a tooltip when hovered.
@@ -131,9 +123,9 @@ namespace nema
         ImFont* m_hubballiFont;
 
         bool m_bShowMainMenuBar;
-        bool m_bShowViewport;
         bool m_bShowAppLog;
         bool m_bShowSerial;
+        bool m_bShowMotors;
 
         /// Width for input fields in the GUI
         const uint16_t m_inputFieldWidth = 150;
