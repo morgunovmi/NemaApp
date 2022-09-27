@@ -365,6 +365,12 @@ namespace nema
             {
                 motor2.Stop();
             }
+
+            if (ImGui::Button("Stop both"))
+            {
+                motor1.Stop();
+                motor2.Stop();
+            }
         }
         ImGui::End();
     }
