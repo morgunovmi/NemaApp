@@ -308,39 +308,40 @@ namespace nema
                 }
             }
 
+            HelpMarker("These coefficients are used to convert from "
+                       "microliters to motor steps\n"
+                       "All amounts below are in microliters");
+            ImGui::DragFloat("vol to step coef 1", &motor1.m_volToStepCoef, 0.5,
+                             0.0, 50);
+            ImGui::SameLine();
+            ImGui::DragFloat("vol to step coef 2", &motor2.m_volToStepCoef, 0.5,
+                             0.0, 50);
+
             static float speed1 = 1000;
             ImGui::DragFloat("Speed 1", &speed1, 0.5, 0, 5000);
             ImGui::SameLine();
             static float speed2 = 1000;
             ImGui::DragFloat("Speed 2", &speed2, 0.5, 0, 5000);
+            ImGui::SameLine();
+            HelpMarker("microliters per minute");
 
             static float amount1 = 1000;
             ImGui::DragFloat("Amount 1", &amount1, 0.5, 0, 10000);
             ImGui::SameLine();
             static float amount2 = 1000;
             ImGui::DragFloat("Amount 2", &amount2, 0.5, 0, 10000);
+            ImGui::SameLine();
+            HelpMarker("mircroliters");
 
-            if (ImGui::Button("Forward 1"))
-            {
-                motor1.Go(-amount1, speed1);
-            }
+            if (ImGui::Button("Forward 1")) { motor1.Go(-amount1, speed1); }
             ImGui::SameLine();
 
-            if (ImGui::Button("Forward 2"))
-            {
-                motor2.Go(amount2, speed2);
-            }
+            if (ImGui::Button("Forward 2")) { motor2.Go(amount2, speed2); }
 
-            if (ImGui::Button("Back 1"))
-            {
-                motor1.Go(amount1, speed1);
-            }
+            if (ImGui::Button("Back 1")) { motor1.Go(amount1, speed1); }
             ImGui::SameLine();
 
-            if (ImGui::Button("Back 2"))
-            {
-                motor2.Go(-amount2, speed2);
-            }
+            if (ImGui::Button("Back 2")) { motor2.Go(-amount2, speed2); }
 
             if (ImGui::Button("Forward Both"))
             {
@@ -355,16 +356,10 @@ namespace nema
                 motor2.Go(-amount2, speed2);
             }
 
-            if (ImGui::Button("Stop 1"))
-            {
-                motor1.Stop();
-            }
+            if (ImGui::Button("Stop 1")) { motor1.Stop(); }
             ImGui::SameLine();
 
-            if (ImGui::Button("Stop 2"))
-            {
-                motor2.Stop();
-            }
+            if (ImGui::Button("Stop 2")) { motor2.Stop(); }
 
             if (ImGui::Button("Stop both"))
             {

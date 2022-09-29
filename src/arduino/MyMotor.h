@@ -7,7 +7,7 @@ class MyMotor
 {
 public:
     MyMotor(const std::string& com_port, DWORD COM_BAUD_RATE)
-        : m_serial(com_port, COM_BAUD_RATE)
+        : m_serial(com_port, COM_BAUD_RATE), m_volToStepCoef(1.0)
     {
     }
 
@@ -31,8 +31,8 @@ public:
     {
         nlohmann::json j;
         j["command"] = "Go";
-        j["amount"] = dist;
-        j["speed"] = speed;
+        j["amount"] = dist * m_volToStepCoef;
+        j["speed"] = speed * m_volToStepCoef / 60.0;
 
         if (m_serial.WriteSerialPort(j.dump()))
         {
@@ -60,6 +60,7 @@ public:
             spdlog::error("Couldn't send string");
         }
     }
+    float m_volToStepCoef;
 
 private:
     MySerial m_serial;
