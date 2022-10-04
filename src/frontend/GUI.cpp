@@ -308,14 +308,49 @@ namespace nema
                 }
             }
 
+            std::vector<std::string> syringes{"1 ml", "2 ml", "5 ml"};
+            Combo("Syringe 1", (int*) &motor1.m_currentSyringe, syringes,
+                  syringes.size());
+            ImGui::SameLine();
+            Combo("Syringe 2", (int*) &motor2.m_currentSyringe, syringes,
+                  syringes.size());
+
             HelpMarker("These coefficients are used to convert from "
                        "milliliters to motor steps\n"
                        "All amounts below are in milliliters");
-            ImGui::DragFloat("vol to step coef 1", &motor1.m_volToStepCoef, 0.5,
-                             2000, 15000);
+
+            ImGui::DragFloat("vol to step coef 1",
+                             &motor1.m_volToStepCoefs[motor1.m_currentSyringe],
+                             0.5, 2000, 15000);
+            if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                if (auto ofs = std::ofstream{motor1.GetSetupPath()})
+                {
+                    nlohmann::json j;
+                    j["mlToStep1"] = motor1.m_volToStepCoefs[0];
+                    j["mlToStep2"] = motor1.m_volToStepCoefs[1];
+                    j["mlToStep5"] = motor1.m_volToStepCoefs[2];
+
+                    ofs << j.dump(4);
+                }
+            }
+
             ImGui::SameLine();
-            ImGui::DragFloat("vol to step coef 2", &motor2.m_volToStepCoef, 0.5,
-                             2000, 15000);
+            ImGui::DragFloat("vol to step coef 2",
+                             &motor2.m_volToStepCoefs[motor2.m_currentSyringe],
+                             0.5, 2000, 15000);
+            if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                if (auto ofs = std::ofstream{motor2.GetSetupPath()})
+                {
+                    nlohmann::json j;
+                    j["mlToStep1"] = motor2.m_volToStepCoefs[0];
+                    j["mlToStep2"] = motor2.m_volToStepCoefs[1];
+                    j["mlToStep5"] = motor2.m_volToStepCoefs[2];
+
+                    ofs << j.dump(4);
+                }
+            }
 
             static float speed1 = 23.0;
             ImGui::DragFloat("Speed 1", &speed1, 0.5, 0, 30);
