@@ -7,7 +7,7 @@ class MyMotor
 {
 public:
     MyMotor(const std::string& com_port, DWORD COM_BAUD_RATE)
-        : m_serial(com_port, COM_BAUD_RATE), m_volToStepCoef(9000.0)
+        : m_serial(com_port, COM_BAUD_RATE), m_volToStepCoef(4285.0)
     {
     }
 

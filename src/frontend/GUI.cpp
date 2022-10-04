@@ -312,23 +312,23 @@ namespace nema
                        "milliliters to motor steps\n"
                        "All amounts below are in milliliters");
             ImGui::DragFloat("vol to step coef 1", &motor1.m_volToStepCoef, 0.5,
-                             5000, 15000);
+                             2000, 15000);
             ImGui::SameLine();
             ImGui::DragFloat("vol to step coef 2", &motor2.m_volToStepCoef, 0.5,
-                             5000, 15000);
+                             2000, 15000);
 
-            static float speed1 = 10.0;
+            static float speed1 = 23.0;
             ImGui::DragFloat("Speed 1", &speed1, 0.5, 0, 30);
             ImGui::SameLine();
-            static float speed2 = 10.0;
+            static float speed2 = 23.0;
             ImGui::DragFloat("Speed 2", &speed2, 0.5, 0, 30);
             ImGui::SameLine();
             HelpMarker("milliliters per minute");
 
-            static float amount1 = 0.1;
+            static float amount1 = 1;
             ImGui::DragFloat("Amount 1", &amount1, 0.5, 0, 30);
             ImGui::SameLine();
-            static float amount2 = 0.1;
+            static float amount2 = 1;
             ImGui::DragFloat("Amount 2", &amount2, 0.5, 0, 30);
             ImGui::SameLine();
             HelpMarker("milliliters");
