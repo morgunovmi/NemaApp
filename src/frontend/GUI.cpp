@@ -345,14 +345,14 @@ namespace nema
 
             if (ImGui::Button("Forward Both"))
             {
-                motor1.Go(-amount1, speed1);
+                motor1.Go(amount1, speed1);
                 motor2.Go(amount2, speed2);
             }
             ImGui::SameLine();
 
             if (ImGui::Button("Back Both"))
             {
-                motor1.Go(amount1, speed1);
+                motor1.Go(-amount1, speed1);
                 motor2.Go(-amount2, speed2);
             }
 
