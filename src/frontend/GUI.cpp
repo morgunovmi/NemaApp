@@ -333,12 +333,12 @@ namespace nema
             ImGui::SameLine();
             HelpMarker("milliliters");
 
-            if (ImGui::Button("Forward 1")) { motor1.Go(-amount1, speed1); }
+            if (ImGui::Button("Forward 1")) { motor1.Go(amount1, speed1); }
             ImGui::SameLine();
 
             if (ImGui::Button("Forward 2")) { motor2.Go(amount2, speed2); }
 
-            if (ImGui::Button("Back 1")) { motor1.Go(amount1, speed1); }
+            if (ImGui::Button("Back 1")) { motor1.Go(-amount1, speed1); }
             ImGui::SameLine();
 
             if (ImGui::Button("Back 2")) { motor2.Go(-amount2, speed2); }
