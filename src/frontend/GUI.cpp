@@ -308,12 +308,20 @@ namespace nema
                 }
             }
 
-            std::vector<std::string> syringes{"1 ml", "2 ml", "5 ml"};
+            static std::vector<std::string> syringes{"1 ml", "2 ml", "5 ml"};
             Combo("Syringe 1", (int*) &motor1.m_currentSyringe, syringes,
                   syringes.size());
             ImGui::SameLine();
             Combo("Syringe 2", (int*) &motor2.m_currentSyringe, syringes,
                   syringes.size());
+
+            static std::vector<std::string> modes{"FULL", "1/2",  "1/4",
+                                                  "1/8",  "1/16", "1/32"};
+            Combo("Driver mode 1", (int*) &motor1.m_currentDriverMode, modes,
+                  modes.size());
+            ImGui::SameLine();
+            Combo("Driver mode 2", (int*) &motor2.m_currentDriverMode, modes,
+                  modes.size());
 
             HelpMarker("These coefficients are used to convert from "
                        "milliliters to motor steps\n"

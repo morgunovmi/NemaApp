@@ -12,12 +12,24 @@ enum eSyringeType
     FIVE_ML
 };
 
+enum eDriverMode
+{
+    FULL,
+    HALF,
+    QUARTER,
+    EIGHTH,
+    ONE_OVER_16,
+    ONE_OVER_32
+};
+
+static const std::array<double, 6> multipliers{1.0, 2.0, 4.0, 8.0, 16.0, 32.0};
+
 class MyMotor
 {
 public:
     MyMotor(const std::string& com_port, DWORD COM_BAUD_RATE)
-        : m_serial(com_port, COM_BAUD_RATE),
-          m_currentSyringe(FIVE_ML), m_volToStepCoefs{4285, 4285, 4285}
+        : m_serial(com_port, COM_BAUD_RATE), m_currentSyringe(FIVE_ML),
+          m_currentDriverMode(FULL), m_volToStepCoefs{4285, 4285, 4285}
     {
         LoadCoeffs();
     }
@@ -57,8 +69,10 @@ public:
     {
         nlohmann::json j;
         j["command"] = "Go";
-        j["amount"] = dist * m_volToStepCoefs[m_currentSyringe];
-        j["speed"] = speed * m_volToStepCoefs[m_currentSyringe] / 60.0;
+        j["amount"] = dist * m_volToStepCoefs[m_currentSyringe] *
+                      multipliers[m_currentDriverMode];
+        j["speed"] = speed * m_volToStepCoefs[m_currentSyringe] *
+                     multipliers[m_currentDriverMode] / 60.0;
 
         if (m_serial.WriteSerialPort(j.dump()))
         {
@@ -91,6 +105,7 @@ public:
 
     std::array<float, 3> m_volToStepCoefs{};
     eSyringeType m_currentSyringe;
+    eDriverMode m_currentDriverMode;
 
 private:
     MySerial m_serial;
