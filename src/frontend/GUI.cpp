@@ -521,7 +521,7 @@ namespace nema
                 motor2.Stop();
             }
 
-            int selected = 0;
+            static int selected = 0;
             std::vector<std::string> motors{"Motor 1", "Motor 2"};
             Combo("Keyboard controlled motor", &selected, motors,
                   motors.size());
