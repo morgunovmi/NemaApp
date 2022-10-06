@@ -2,8 +2,10 @@
 
 #include <SFML/Graphics.hpp>
 #include <queue>
+#include <unordered_map>
 
 #include "../misc/Log.h"
+#include "arduino/MyMotor.h"
 
 namespace nema
 {
@@ -133,5 +135,15 @@ namespace nema
 
         /// Size of the queue that stores recent frame times
         const uint16_t FRAME_QUEUE_SIZE = 60;
+
+        struct KeyState {
+            bool isPressed;
+            bool stateChanged;
+        };
+
+        std::unordered_map<sf::Keyboard::Key, KeyState> m_keyStates;
+
+        void HandleInputCommands(MyMotor& m1, MyMotor& m2, uint8_t selected,
+                float speed1, float speed2);
     };
 }// namespace nema

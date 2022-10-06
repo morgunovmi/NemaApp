@@ -79,6 +79,10 @@ namespace nema
         colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 
         spdlog::debug("GUI Init successful");
+
+        m_keyStates[sf::Keyboard::Left] = {false, false};
+        m_keyStates[sf::Keyboard::Right] = {false, false};
+        m_keyStates[sf::Keyboard::Space] = {false, false};
     }
 
     void GUI::PollEvents()
@@ -103,10 +107,71 @@ namespace nema
                         case sf::Keyboard::LAlt:
                             m_bShowMainMenuBar = !m_bShowMainMenuBar;
                             break;
+                        case sf::Keyboard::Left:
+                            if (!m_keyStates[sf::Keyboard::Left].isPressed)
+                            {
+                                m_keyStates[sf::Keyboard::Left].isPressed =
+                                        true;
+                                m_keyStates[sf::Keyboard::Left].stateChanged =
+                                        true;
+                            }
+                            break;
+                        case sf::Keyboard::Right:
+                            if (!m_keyStates[sf::Keyboard::Right].isPressed)
+                            {
+                                m_keyStates[sf::Keyboard::Right].isPressed =
+                                        true;
+                                m_keyStates[sf::Keyboard::Right].stateChanged =
+                                        true;
+                            }
+                            break;
+                        case sf::Keyboard::Space:
+                            if (!m_keyStates[sf::Keyboard::Space].isPressed)
+                            {
+                                m_keyStates[sf::Keyboard::Space].isPressed =
+                                        true;
+                                m_keyStates[sf::Keyboard::Space].stateChanged =
+                                        true;
+                            }
+                            break;
                         default:
                             break;
                     }
                     break;
+                case sf::Event::KeyReleased:
+                {
+                    switch (event.key.code)
+                    {
+                        case sf::Keyboard::Left:
+                            if (m_keyStates[sf::Keyboard::Left].isPressed)
+                            {
+                                m_keyStates[sf::Keyboard::Left].isPressed =
+                                        false;
+                                m_keyStates[sf::Keyboard::Left].stateChanged =
+                                        true;
+                            }
+                            break;
+                        case sf::Keyboard::Right:
+                            if (m_keyStates[sf::Keyboard::Right].isPressed)
+                            {
+                                m_keyStates[sf::Keyboard::Right].isPressed =
+                                        false;
+                                m_keyStates[sf::Keyboard::Right].stateChanged =
+                                        true;
+                            }
+                            break;
+                        case sf::Keyboard::Space:
+                            if (m_keyStates[sf::Keyboard::Space].isPressed)
+                            {
+                                m_keyStates[sf::Keyboard::Space].isPressed =
+                                        false;
+                                m_keyStates[sf::Keyboard::Space].stateChanged =
+                                        true;
+                            }
+                            break;
+                    }
+                }
+                break;
                 default:
                     break;
             }
@@ -241,6 +306,56 @@ namespace nema
         ImGui::End();
     }
 
+    void GUI::HandleInputCommands(MyMotor& m1, MyMotor& m2, uint8_t selected,
+                                  float speed1, float speed2)
+    {
+        for (auto& [key, state]: m_keyStates)
+        {
+            if (state.stateChanged)
+            {
+                MyMotor& selectedMotor = selected == 0 ? m1 : m2;
+                float selectedSpeed = selected == 0 ? speed1 : speed2;
+                switch (key)
+                {
+                    case sf::Keyboard::Left:
+                    {
+                        if (state.isPressed)
+                        {
+                            selectedMotor.Go(20, selectedSpeed);
+                        }
+                        else
+                        {
+                            selectedMotor.Stop();
+                        }
+                    }
+                    break;
+                    case sf::Keyboard::Right:
+                    {
+                        if (state.isPressed)
+                        {
+                            selectedMotor.Go(-20, selectedSpeed);
+                        }
+                        else
+                        {
+                            selectedMotor.Stop();
+                        }
+                    }
+                    break;
+                    case sf::Keyboard::Space:
+                    {
+                        if (state.isPressed)
+                        {
+                            m1.Stop();
+                            m2.Stop();
+                        }
+                    }
+                    break;
+                }
+                m_keyStates[key].stateChanged = false;
+            }
+        }
+    }
+
     void GUI::ShowMotorControls()
     {
         if (ImGui::Begin("Motor Controls", &m_bShowMotors))
@@ -273,6 +388,7 @@ namespace nema
             Combo("Motor 1 Port", &currentPort1, portStrs, portStrs.size());
             ImGui::SameLine();
             Combo("Motor 2 Port", &currentPort2, portStrs, portStrs.size());
+
 
             if (ImGui::Button("Connect 1"))
             {
@@ -399,16 +515,18 @@ namespace nema
                 motor2.Go(-amount2, speed2);
             }
 
-            if (ImGui::Button("Stop 1")) { motor1.Stop(); }
-            ImGui::SameLine();
-
-            if (ImGui::Button("Stop 2")) { motor2.Stop(); }
-
             if (ImGui::Button("Stop both"))
             {
                 motor1.Stop();
                 motor2.Stop();
             }
+
+            int selected = 0;
+            std::vector<std::string> motors{"Motor 1", "Motor 2"};
+            Combo("Keyboard controlled motor", &selected, motors,
+                  motors.size());
+
+            HandleInputCommands(motor1, motor2, selected, speed1, speed2);
         }
         ImGui::End();
     }
