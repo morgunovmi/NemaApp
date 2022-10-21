@@ -27,9 +27,18 @@ static const std::array<double, 6> multipliers{1.0, 2.0, 4.0, 8.0, 16.0, 32.0};
 class MyMotor
 {
 public:
-    MyMotor(const std::string& com_port, DWORD COM_BAUD_RATE)
+    MyMotor(const std::string& name)
+        : m_name(name), m_currentSyringe(FIVE_ML),
+          m_currentDriverMode(ONE_OVER_32), m_volToStepCoefs{4285, 4285, 4285}
+    {
+        LoadCoeffs();
+    }
+
+    MyMotor(const std::string& name, const std::string& com_port,
+            DWORD COM_BAUD_RATE)
         : m_serial(com_port, COM_BAUD_RATE), m_currentSyringe(FIVE_ML),
-          m_currentDriverMode(FULL), m_volToStepCoefs{4285, 4285, 4285}
+          m_name(name),
+          m_currentDriverMode(ONE_OVER_32), m_volToStepCoefs{4285, 4285, 4285}
     {
         LoadCoeffs();
     }
@@ -42,9 +51,9 @@ public:
             {
                 const auto j = nlohmann::json::parse(ifs);
 
-                j.at("mlToStep1").get_to(m_volToStepCoefs[0]);
-                j.at("mlToStep2").get_to(m_volToStepCoefs[1]);
-                j.at("mlToStep5").get_to(m_volToStepCoefs[2]);
+                j.at(m_name).at("mlToStep1").get_to(m_volToStepCoefs[0]);
+                j.at(m_name).at("mlToStep2").get_to(m_volToStepCoefs[1]);
+                j.at(m_name).at("mlToStep5").get_to(m_volToStepCoefs[2]);
             }
         }
     }
@@ -62,6 +71,13 @@ public:
             spdlog::error("Couldn't connect to {}", com_port);
         }
     }
+
+    void Update()
+    {
+        if (!m_serial.WriteSerialPort("meme")) { m_serial.CloseSerialPort(); }
+    }
+
+    const std::string& Name() const { return m_name; }
 
     [[nodiscard]] bool IsConnected() const { return m_serial.IsConnected(); }
 
@@ -109,6 +125,7 @@ public:
 
 private:
     MySerial m_serial;
+    const std::string m_name;
 
     const std::string SETUP_PATH = "setup.json";
 };

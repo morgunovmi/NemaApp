@@ -9,6 +9,7 @@
 class MySerial
 {
 public:
+    MySerial() : m_connected(false), m_ioHandle(nullptr) {}
     MySerial(const std::string& com_port, DWORD COM_BAUD_RATE)
         : m_connected(false), m_ioHandle(nullptr)
     {

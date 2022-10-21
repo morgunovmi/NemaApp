@@ -196,10 +196,6 @@ namespace nema
         {
             if (ImGui::BeginMenu("Windows"))
             {
-                if (ImGui::MenuItem("Serial Controller", nullptr,
-                                    &m_bShowSerial))
-                {
-                }
                 if (ImGui::MenuItem("App Log", nullptr, &m_bShowAppLog)) {}
                 ImGui::EndMenu();
             }
@@ -227,7 +223,6 @@ namespace nema
 
         if (m_bShowMainMenuBar) ShowMainMenuBar();
         if (m_bShowAppLog) ShowAppLog();
-        if (m_bShowSerial) ShowSerialPort();
         if (m_bShowMotors) ShowMotorControls();
 
 #ifndef NDEBUG
@@ -240,73 +235,7 @@ namespace nema
 
     void GUI::Shutdown() { ImGui::SFML::Shutdown(); }
 
-    void GUI::ShowSerialPort()
-    {
-        if (ImGui::Begin("Serial Controller", &m_bShowSerial))
-        {
-            ULONG size = 10;
-            std::vector<ULONG> coms(size);
-            ULONG found = 0;
-
-            GetCommPorts(coms.data(), size, &found);
-            ::ranges::sort(coms.begin(), coms.end());
-            auto portStrs = coms |
-                            ::ranges::views::filter([](auto comNum)
-                                                    { return comNum != 0; }) |
-                            ::ranges::views::transform(
-                                    [](auto comNum)
-                                    { return fmt::format("COM{}", comNum); }) |
-                            ::ranges::to<std::vector<std::string>>();
-
-            static MySerial serial(
-                    fmt::format("\\\\.\\{}", portStrs[portStrs.size() - 1]),
-                    CBR_9600);
-
-            static int currentPort = portStrs.size() - 1;
-            ImGui::PushItemWidth(m_inputFieldWidth);
-            Combo("Port", &currentPort, portStrs, portStrs.size());
-
-            ImGui::SameLine();
-            if (ImGui::Button("Connect"))
-            {
-                serial.Connect(
-                        fmt::format("\\\\.\\{}", portStrs[portStrs.size() - 1]),
-                        CBR_9600);
-
-                if (serial.IsConnected())
-                {
-                    spdlog::info("Connected to {} successfully",
-                                 portStrs[currentPort]);
-                }
-                else
-                {
-                    spdlog::error("Couldn't connect to {}",
-                                  portStrs[currentPort]);
-                }
-
-                spdlog::info("{}", serial.ReadSerialPort());
-            }
-
-            static std::string toSend{};
-            ImGui::InputTextWithHint("Send to serial port", nullptr, &toSend);
-            if (ImGui::IsItemDeactivatedAfterEdit() && !toSend.empty())
-            {
-                if (serial.WriteSerialPort(toSend))
-                {
-                    spdlog::info("Sent \"{}\"\nReceived {}", toSend,
-                                 serial.ReadSerialPort());
-                }
-                else
-                {
-                    spdlog::error("Couldn't send string");
-                }
-            }
-            ImGui::PopItemWidth();
-        }
-        ImGui::End();
-    }
-
-    void GUI::HandleInputCommands(MyMotor& m1, MyMotor& m2, uint8_t selected,
+    void GUI::HandleInputCommands(MyMotor& m1, MyMotor& m2, uint32_t selected,
                                   float speed1, float speed2)
     {
         for (auto& [key, state]: m_keyStates)
@@ -366,78 +295,95 @@ namespace nema
 
             GetCommPorts(coms.data(), size, &found);
             ::ranges::sort(coms.begin(), coms.end());
-            auto portStrs = coms |
-                            ::ranges::views::filter([](auto comNum)
-                                                    { return comNum != 0; }) |
-                            ::ranges::views::transform(
-                                    [](auto comNum)
-                                    { return fmt::format("COM{}", comNum); }) |
+            auto portStrs = coms | ::ranges::views::filter([](auto comNum) {
+                                return comNum != 0;
+                            }) |
+                            ::ranges::views::transform([](auto comNum) {
+                                return fmt::format("COM{}", comNum);
+                            }) |
                             ::ranges::to<std::vector<std::string>>();
 
-            static MyMotor motor1{
-                    fmt::format("\\\\.\\{}", portStrs[portStrs.size() - 2]),
-                    CBR_9600};
+            const int numPorts = static_cast<int>(portStrs.size());
+            static MyMotor motor1{"motor1"}, motor2{"motor2"};
 
-            static MyMotor motor2{
-                    fmt::format("\\\\.\\{}", portStrs[portStrs.size() - 1]),
-                    CBR_9600};
-
-            static int currentPort1 = portStrs.size() - 2;
-            static int currentPort2 = portStrs.size() - 1;
-            ImGui::PushItemWidth(m_inputFieldWidth);
-            Combo("Motor 1 Port", &currentPort1, portStrs, portStrs.size());
-            ImGui::SameLine();
-            Combo("Motor 2 Port", &currentPort2, portStrs, portStrs.size());
-
-
-            if (ImGui::Button("Connect 1"))
+            if (numPorts > 1 && !(motor1.IsConnected() && motor2.IsConnected()))
             {
-                motor1.Connect(fmt::format("\\\\.\\{}", portStrs[currentPort1]),
+                motor1.Connect(fmt::format("\\\\.\\{}", portStrs[numPorts - 2]),
                                CBR_9600);
-
-                if (motor1.IsConnected())
-                {
-                    spdlog::info("Connected to {} successfully",
-                                 portStrs[currentPort1]);
-                }
-                else
-                {
-                    spdlog::error("Couldn't connect to {}",
-                                  portStrs[currentPort1]);
-                }
+                motor2.Connect(fmt::format("\\\\.\\{}", portStrs[numPorts - 1]),
+                               CBR_9600);
             }
-            ImGui::SameLine();
-            if (ImGui::Button("Connect 2"))
-            {
-                motor2.Connect(fmt::format("\\\\.\\{}", portStrs[currentPort2]),
-                               CBR_9600);
 
-                if (motor2.IsConnected())
+            if (!(motor1.IsConnected() && motor2.IsConnected()))
+            {
+                ImGui::Text("Please connect both motors\n");
+                ImGui::BeginDisabled();
+            }
+
+            ImGui::PushItemWidth(m_inputFieldWidth);
+
+            if (motor1.IsConnected() && motor2.IsConnected())
+            {
+                static auto currentPort1 = numPorts - 2;
+                static auto currentPort2 = numPorts - 1;
+
+                Combo("Motor 1 Port", &currentPort1, portStrs,
+                      static_cast<int>(portStrs.size()));
+                ImGui::SameLine();
+                Combo("Motor 2 Port", &currentPort2, portStrs,
+                      static_cast<int>(portStrs.size()));
+
+                if (ImGui::Button("Connect 1"))
                 {
-                    spdlog::info("Connected to {} successfully",
-                                 portStrs[currentPort2]);
+                    motor1.Connect(
+                            fmt::format("\\\\.\\{}", portStrs[currentPort1]),
+                            CBR_9600);
+
+                    if (motor1.IsConnected())
+                    {
+                        spdlog::info("Connected to {} successfully",
+                                     portStrs[currentPort1]);
+                    }
+                    else
+                    {
+                        spdlog::error("Couldn't connect to {}",
+                                      portStrs[currentPort1]);
+                    }
                 }
-                else
+                ImGui::SameLine();
+                if (ImGui::Button("Connect 2"))
                 {
-                    spdlog::error("Couldn't connect to {}",
-                                  portStrs[currentPort2]);
+                    motor2.Connect(
+                            fmt::format("\\\\.\\{}", portStrs[currentPort2]),
+                            CBR_9600);
+
+                    if (motor2.IsConnected())
+                    {
+                        spdlog::info("Connected to {} successfully",
+                                     portStrs[currentPort2]);
+                    }
+                    else
+                    {
+                        spdlog::error("Couldn't connect to {}",
+                                      portStrs[currentPort2]);
+                    }
                 }
             }
 
             static std::vector<std::string> syringes{"1 ml", "2 ml", "5 ml"};
             Combo("Syringe 1", (int*) &motor1.m_currentSyringe, syringes,
-                  syringes.size());
+                  static_cast<int>(syringes.size()));
             ImGui::SameLine();
             Combo("Syringe 2", (int*) &motor2.m_currentSyringe, syringes,
-                  syringes.size());
+                  static_cast<int>(syringes.size()));
 
             static std::vector<std::string> modes{"FULL", "1/2",  "1/4",
                                                   "1/8",  "1/16", "1/32"};
             Combo("Driver mode 1", (int*) &motor1.m_currentDriverMode, modes,
-                  modes.size());
+                  static_cast<int>(modes.size()));
             ImGui::SameLine();
             Combo("Driver mode 2", (int*) &motor2.m_currentDriverMode, modes,
-                  modes.size());
+                  static_cast<int>(modes.size()));
 
             HelpMarker("These coefficients are used to convert from "
                        "milliliters to motor steps\n"
@@ -451,9 +397,12 @@ namespace nema
                 if (auto ofs = std::ofstream{motor1.GetSetupPath()})
                 {
                     nlohmann::json j;
-                    j["mlToStep1"] = motor1.m_volToStepCoefs[0];
-                    j["mlToStep2"] = motor1.m_volToStepCoefs[1];
-                    j["mlToStep5"] = motor1.m_volToStepCoefs[2];
+                    j[motor1.Name()]["mlToStep1"] = motor1.m_volToStepCoefs[0];
+                    j[motor1.Name()]["mlToStep2"] = motor1.m_volToStepCoefs[1];
+                    j[motor1.Name()]["mlToStep5"] = motor1.m_volToStepCoefs[2];
+                    j[motor2.Name()]["mlToStep1"] = motor2.m_volToStepCoefs[0];
+                    j[motor2.Name()]["mlToStep2"] = motor2.m_volToStepCoefs[1];
+                    j[motor2.Name()]["mlToStep5"] = motor2.m_volToStepCoefs[2];
 
                     ofs << j.dump(4);
                 }
@@ -468,9 +417,12 @@ namespace nema
                 if (auto ofs = std::ofstream{motor2.GetSetupPath()})
                 {
                     nlohmann::json j;
-                    j["mlToStep1"] = motor2.m_volToStepCoefs[0];
-                    j["mlToStep2"] = motor2.m_volToStepCoefs[1];
-                    j["mlToStep5"] = motor2.m_volToStepCoefs[2];
+                    j[motor1.Name()]["mlToStep1"] = motor1.m_volToStepCoefs[0];
+                    j[motor1.Name()]["mlToStep2"] = motor1.m_volToStepCoefs[1];
+                    j[motor1.Name()]["mlToStep5"] = motor1.m_volToStepCoefs[2];
+                    j[motor2.Name()]["mlToStep1"] = motor2.m_volToStepCoefs[0];
+                    j[motor2.Name()]["mlToStep2"] = motor2.m_volToStepCoefs[1];
+                    j[motor2.Name()]["mlToStep5"] = motor2.m_volToStepCoefs[2];
 
                     ofs << j.dump(4);
                 }
@@ -524,9 +476,14 @@ namespace nema
             static int selected = 0;
             std::vector<std::string> motors{"Motor 1", "Motor 2"};
             Combo("Keyboard controlled motor", &selected, motors,
-                  motors.size());
+                  static_cast<int>(motors.size()));
 
             HandleInputCommands(motor1, motor2, selected, speed1, speed2);
+
+            if (!(motor1.IsConnected() && motor2.IsConnected()))
+            {
+                ImGui::EndDisabled();
+            }
         }
         ImGui::End();
     }

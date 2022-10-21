@@ -5,7 +5,8 @@
 /**
  * Basic timer class for code profiling
  */
-class Timer {
+class Timer
+{
 public:
     using clock_t = std::chrono::steady_clock;
     using timepoint_t = clock_t::time_point;

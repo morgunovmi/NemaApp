@@ -9,7 +9,7 @@
 #include "misc/Log.h"
 #include "misc/LogSink.h"
 
-int main(int argc, char** argv)
+int main()
 {
     try
     {
@@ -18,15 +18,15 @@ int main(int argc, char** argv)
         auto sink = std::make_shared<LogSinkMt>(log);
 
         auto console_sink =
-            std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+                std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
         auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
-            "logs/app_log.txt");
+                "logs/app_log.txt");
 
-        std::vector<spdlog::sink_ptr> sinks{ sink, console_sink, file_sink };
+        std::vector<spdlog::sink_ptr> sinks{sink, console_sink, file_sink};
         auto MyLogger = std::make_shared<spdlog::logger>(
-            "MyLogger", sinks.begin(), sinks.end());
-//        MyLogger->set_pattern(">> [%T] {%t} (%^%l%$) %v <<");
+                "MyLogger", sinks.begin(), sinks.end());
+        //        MyLogger->set_pattern(">> [%T] {%t} (%^%l%$) %v <<");
         MyLogger->set_pattern(">> (%^%l%$) %v <<");
 
 #ifndef NDEBUG
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
         settings.antialiasingLevel = antialiasingLevel;
 
         spdlog::info("\n>> NEW LAUNCH <<\n");
-        nema::App app{ argc, argv, width, height, settings, log };
+        nema::App app{width, height, settings, log};
         app.Run();
     }
     catch (std::exception& e)

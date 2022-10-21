@@ -15,7 +15,7 @@ namespace nema
     class App
     {
     public:
-        App(int argc, char** argv, uint16_t width, uint16_t height,
+        App(uint16_t width, uint16_t height,
             const sf::ContextSettings& settings, Log& log)
             : m_window(sf::VideoMode{width, height}, "Nema App",
                        sf::Style::Default, settings),

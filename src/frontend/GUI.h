@@ -19,9 +19,9 @@ namespace nema
         GUI(sf::RenderWindow& window, sf::Time& dt, Log& log,
             sf::Texture& texture, std::mutex& mutex)
             : m_window(window), m_dt(dt), m_bShowMainMenuBar(true),
-              m_bShowAppLog(true), m_appLog(log),
-              m_hubballiFont(), m_currentTexture(texture),
-              m_textureMutex(mutex), m_bShowSerial(false), m_bShowMotors(true)
+              m_bShowAppLog(true), m_appLog(log), m_hubballiFont(),
+              m_currentTexture(texture), m_textureMutex(mutex),
+              m_bShowMotors(true)
         {
         }
 
@@ -62,10 +62,9 @@ namespace nema
         void ShowAppLog();
 
         /**
-         * Draws serial port control window
+         * @brief 
+         * Draws stepper motor connection and movement controls
          */
-        void ShowSerialPort();
-
         void ShowMotorControls();
 
         /**
@@ -95,8 +94,7 @@ namespace nema
         {
             return ImGui::Combo(
                     label, current_item,
-                    [](void* data, int idx, const char** out_text)
-                    {
+                    [](void* data, int idx, const char** out_text) {
                         *out_text =
                                 (*(const std::vector<std::string>*) data)[idx]
                                         .c_str();
@@ -126,7 +124,6 @@ namespace nema
 
         bool m_bShowMainMenuBar;
         bool m_bShowAppLog;
-        bool m_bShowSerial;
         bool m_bShowMotors;
 
         /// Width for input fields in the GUI
@@ -136,14 +133,15 @@ namespace nema
         /// Size of the queue that stores recent frame times
         const uint16_t FRAME_QUEUE_SIZE = 60;
 
-        struct KeyState {
+        struct KeyState
+        {
             bool isPressed;
             bool stateChanged;
         };
 
         std::unordered_map<sf::Keyboard::Key, KeyState> m_keyStates;
 
-        void HandleInputCommands(MyMotor& m1, MyMotor& m2, uint8_t selected,
-                float speed1, float speed2);
+        void HandleInputCommands(MyMotor& m1, MyMotor& m2, uint32_t selected,
+                                 float speed1, float speed2);
     };
 }// namespace nema
