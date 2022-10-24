@@ -252,10 +252,7 @@ namespace nema
                         {
                             selectedMotor.Go(20, selectedSpeed);
                         }
-                        else
-                        {
-                            selectedMotor.Stop();
-                        }
+                        else { selectedMotor.Stop(); }
                     }
                     break;
                     case sf::Keyboard::Right:
@@ -264,10 +261,7 @@ namespace nema
                         {
                             selectedMotor.Go(-20, selectedSpeed);
                         }
-                        else
-                        {
-                            selectedMotor.Stop();
-                        }
+                        else { selectedMotor.Stop(); }
                     }
                     break;
                     case sf::Keyboard::Space:
@@ -295,12 +289,12 @@ namespace nema
 
             GetCommPorts(coms.data(), size, &found);
             ::ranges::sort(coms.begin(), coms.end());
-            auto portStrs = coms | ::ranges::views::filter([](auto comNum) {
-                                return comNum != 0;
-                            }) |
-                            ::ranges::views::transform([](auto comNum) {
-                                return fmt::format("COM{}", comNum);
-                            }) |
+            auto portStrs = coms |
+                            ::ranges::views::filter([](auto comNum)
+                                                    { return comNum != 0; }) |
+                            ::ranges::views::transform(
+                                    [](auto comNum)
+                                    { return fmt::format("COM{}", comNum); }) |
                             ::ranges::to<std::vector<std::string>>();
 
             const int numPorts = static_cast<int>(portStrs.size());
@@ -327,13 +321,10 @@ namespace nema
                 static auto currentPort1 = numPorts - 2;
                 static auto currentPort2 = numPorts - 1;
 
+                ImGui::BeginGroup();
                 Combo("Motor 1 Port", &currentPort1, portStrs,
                       static_cast<int>(portStrs.size()));
-                ImGui::SameLine();
-                Combo("Motor 2 Port", &currentPort2, portStrs,
-                      static_cast<int>(portStrs.size()));
-
-                if (ImGui::Button("Connect 1"))
+                if (ImGui::Button("Connect 1", ImVec2(m_inputFieldWidth, 30.f)))
                 {
                     motor1.Connect(
                             fmt::format("\\\\.\\{}", portStrs[currentPort1]),
@@ -350,8 +341,13 @@ namespace nema
                                       portStrs[currentPort1]);
                     }
                 }
+                ImGui::EndGroup();
                 ImGui::SameLine();
-                if (ImGui::Button("Connect 2"))
+
+                ImGui::BeginGroup();
+                Combo("Motor 2 Port", &currentPort2, portStrs,
+                      static_cast<int>(portStrs.size()));
+                if (ImGui::Button("Connect 2", ImVec2(m_inputFieldWidth, 30.f)))
                 {
                     motor2.Connect(
                             fmt::format("\\\\.\\{}", portStrs[currentPort2]),
@@ -368,27 +364,33 @@ namespace nema
                                       portStrs[currentPort2]);
                     }
                 }
+                ImGui::EndGroup();
+                ImGui::Dummy(ImVec2(0.f, 20.f));
             }
 
             static std::vector<std::string> syringes{"1 ml", "2 ml", "5 ml"};
-            Combo("Syringe 1", (int*) &motor1.m_currentSyringe, syringes,
-                  static_cast<int>(syringes.size()));
-            ImGui::SameLine();
-            Combo("Syringe 2", (int*) &motor2.m_currentSyringe, syringes,
-                  static_cast<int>(syringes.size()));
-
             static std::vector<std::string> modes{"FULL", "1/2",  "1/4",
                                                   "1/8",  "1/16", "1/32"};
+
+            ImGui::BeginGroup();
+            Combo("Syringe 1", (int*) &motor1.m_currentSyringe, syringes,
+                  static_cast<int>(syringes.size()));
             Combo("Driver mode 1", (int*) &motor1.m_currentDriverMode, modes,
                   static_cast<int>(modes.size()));
+            ImGui::EndGroup();
             ImGui::SameLine();
+
+            ImGui::BeginGroup();
+            Combo("Syringe 2", (int*) &motor2.m_currentSyringe, syringes,
+                  static_cast<int>(syringes.size()));
             Combo("Driver mode 2", (int*) &motor2.m_currentDriverMode, modes,
                   static_cast<int>(modes.size()));
+            ImGui::EndGroup();
 
-            HelpMarker("These coefficients are used to convert from "
-                       "milliliters to motor steps\n"
-                       "All amounts below are in milliliters");
+            ImGui::Dummy(ImVec2(0.f, 20.f));
 
+
+            ImGui::BeginGroup();
             ImGui::DragFloat("vol to step coef 1",
                              &motor1.m_volToStepCoefs[motor1.m_currentSyringe],
                              0.5, 2000, 15000);
@@ -407,8 +409,14 @@ namespace nema
                     ofs << j.dump(4);
                 }
             }
-
+            static float speed1 = 23.0;
+            ImGui::DragFloat("Speed 1", &speed1, 0.5, 0, 30);
+            static float amount1 = 1;
+            ImGui::DragFloat("Amount 1", &amount1, 0.5, 0, 30);
+            ImGui::EndGroup();
             ImGui::SameLine();
+
+            ImGui::BeginGroup();
             ImGui::DragFloat("vol to step coef 2",
                              &motor2.m_volToStepCoefs[motor2.m_currentSyringe],
                              0.5, 2000, 15000);
@@ -427,47 +435,57 @@ namespace nema
                     ofs << j.dump(4);
                 }
             }
-
-            static float speed1 = 23.0;
-            ImGui::DragFloat("Speed 1", &speed1, 0.5, 0, 30);
             ImGui::SameLine();
+            HelpMarker("These coefficients are used to convert from "
+                       "milliliters to motor steps\n"
+                       "All amounts below are in milliliters");
             static float speed2 = 23.0;
             ImGui::DragFloat("Speed 2", &speed2, 0.5, 0, 30);
             ImGui::SameLine();
             HelpMarker("milliliters per minute");
 
-            static float amount1 = 1;
-            ImGui::DragFloat("Amount 1", &amount1, 0.5, 0, 30);
-            ImGui::SameLine();
             static float amount2 = 1;
             ImGui::DragFloat("Amount 2", &amount2, 0.5, 0, 30);
             ImGui::SameLine();
             HelpMarker("milliliters");
+            ImGui::EndGroup();
 
-            if (ImGui::Button("Forward 1")) { motor1.Go(amount1, speed1); }
-            ImGui::SameLine();
+            ImGui::Dummy(ImVec2(0.f, 20.f));
 
-            if (ImGui::Button("Forward 2")) { motor2.Go(amount2, speed2); }
-
-            if (ImGui::Button("Back 1")) { motor1.Go(-amount1, speed1); }
-            ImGui::SameLine();
-
-            if (ImGui::Button("Back 2")) { motor2.Go(-amount2, speed2); }
-
-            if (ImGui::Button("Forward Both"))
+            ImGui::BeginGroup();
+            if (ImGui::Button("Forward 1", ImVec2(150.f, 40.f)))
+            {
+                motor1.Go(amount1, speed1);
+            }
+            if (ImGui::Button("Back 1", ImVec2(150.f, 40.f)))
+            {
+                motor1.Go(-amount1, speed1);
+            }
+            if (ImGui::Button("Forward Both", ImVec2(150.f, 40.f)))
             {
                 motor1.Go(amount1, speed1);
                 motor2.Go(amount2, speed2);
             }
+            ImGui::EndGroup();
             ImGui::SameLine();
 
-            if (ImGui::Button("Back Both"))
+            ImGui::BeginGroup();
+            if (ImGui::Button("Forward 2", ImVec2(150.f, 40.f)))
+            {
+                motor2.Go(amount2, speed2);
+            }
+            if (ImGui::Button("Back 2", ImVec2(150.f, 40.f)))
+            {
+                motor2.Go(-amount2, speed2);
+            }
+            if (ImGui::Button("Back Both", ImVec2(150.f, 40.f)))
             {
                 motor1.Go(-amount1, speed1);
                 motor2.Go(-amount2, speed2);
             }
+            ImGui::EndGroup();
 
-            if (ImGui::Button("Stop both"))
+            if (ImGui::Button("Stop both", ImVec2(150.f, 60.f)))
             {
                 motor1.Stop();
                 motor2.Stop();
@@ -484,6 +502,8 @@ namespace nema
             {
                 ImGui::EndDisabled();
             }
+
+            ImGui::PopItemWidth();
         }
         ImGui::End();
     }
