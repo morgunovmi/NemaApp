@@ -31,7 +31,9 @@ public:
         : m_name(name), m_currentSyringe(FIVE_ML),
           m_currentDriverMode(ONE_OVER_32), m_volToStepCoefs{4285, 4285, 4285}
     {
+        // spdlog::info("Before loading");
         LoadCoeffs();
+        // spdlog::info("after loading");
     }
 
     MyMotor(const std::string& name, const std::string& com_port,
@@ -51,9 +53,12 @@ public:
             {
                 const auto j = nlohmann::json::parse(ifs);
 
-                j.at(m_name).at("mlToStep1").get_to(m_volToStepCoefs[0]);
-                j.at(m_name).at("mlToStep2").get_to(m_volToStepCoefs[1]);
-                j.at(m_name).at("mlToStep5").get_to(m_volToStepCoefs[2]);
+                if (j.contains(m_name))
+                {
+                    j.at(m_name).at("mlToStep1").get_to(m_volToStepCoefs[0]);
+                    j.at(m_name).at("mlToStep2").get_to(m_volToStepCoefs[1]);
+                    j.at(m_name).at("mlToStep5").get_to(m_volToStepCoefs[2]);
+                }
             }
         }
     }
@@ -66,10 +71,7 @@ public:
         {
             spdlog::info("Connected to {} successfully", com_port);
         }
-        else
-        {
-            spdlog::error("Couldn't connect to {}", com_port);
-        }
+        else { spdlog::error("Couldn't connect to {}", com_port); }
     }
 
     void Update()
@@ -95,10 +97,7 @@ public:
             spdlog::info("Sent \"{}\"", j.dump());
             spdlog::info("Received \"{}\"", m_serial.ReadSerialPort());
         }
-        else
-        {
-            spdlog::error("Couldn't send string");
-        }
+        else { spdlog::error("Couldn't send string"); }
     }
 
     void Stop()
@@ -111,10 +110,7 @@ public:
             spdlog::info("Sent \"{}\"", j.dump());
             spdlog::info("Received \"{}\"", m_serial.ReadSerialPort());
         }
-        else
-        {
-            spdlog::error("Couldn't send string");
-        }
+        else { spdlog::error("Couldn't send string"); }
     }
 
     std::string GetSetupPath() const { return SETUP_PATH; }

@@ -197,6 +197,9 @@ namespace nema
             if (ImGui::BeginMenu("Windows"))
             {
                 if (ImGui::MenuItem("App Log", nullptr, &m_bShowAppLog)) {}
+                if (ImGui::MenuItem("Dumper Controls", nullptr, &m_bShowDumper))
+                {
+                }
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();
@@ -224,6 +227,7 @@ namespace nema
         if (m_bShowMainMenuBar) ShowMainMenuBar();
         if (m_bShowAppLog) ShowAppLog();
         if (m_bShowMotors) ShowMotorControls();
+        if (m_bShowDumper) ShowDumperControls();
 
 #ifndef NDEBUG
         ImGui::ShowDemoWindow();
@@ -398,15 +402,14 @@ namespace nema
             {
                 if (auto ofs = std::ofstream{motor1.GetSetupPath()})
                 {
-                    nlohmann::json j;
-                    j[motor1.Name()]["mlToStep1"] = motor1.m_volToStepCoefs[0];
-                    j[motor1.Name()]["mlToStep2"] = motor1.m_volToStepCoefs[1];
-                    j[motor1.Name()]["mlToStep5"] = motor1.m_volToStepCoefs[2];
-                    j[motor2.Name()]["mlToStep1"] = motor2.m_volToStepCoefs[0];
-                    j[motor2.Name()]["mlToStep2"] = motor2.m_volToStepCoefs[1];
-                    j[motor2.Name()]["mlToStep5"] = motor2.m_volToStepCoefs[2];
+                    motorState[motor1.Name()]["mlToStep1"] =
+                            motor1.m_volToStepCoefs[0];
+                    motorState[motor1.Name()]["mlToStep2"] =
+                            motor1.m_volToStepCoefs[1];
+                    motorState[motor1.Name()]["mlToStep5"] =
+                            motor1.m_volToStepCoefs[2];
 
-                    ofs << j.dump(4);
+                    ofs << motorState.dump(4);
                 }
             }
             static float speed1 = 23.0;
@@ -424,15 +427,14 @@ namespace nema
             {
                 if (auto ofs = std::ofstream{motor2.GetSetupPath()})
                 {
-                    nlohmann::json j;
-                    j[motor1.Name()]["mlToStep1"] = motor1.m_volToStepCoefs[0];
-                    j[motor1.Name()]["mlToStep2"] = motor1.m_volToStepCoefs[1];
-                    j[motor1.Name()]["mlToStep5"] = motor1.m_volToStepCoefs[2];
-                    j[motor2.Name()]["mlToStep1"] = motor2.m_volToStepCoefs[0];
-                    j[motor2.Name()]["mlToStep2"] = motor2.m_volToStepCoefs[1];
-                    j[motor2.Name()]["mlToStep5"] = motor2.m_volToStepCoefs[2];
+                    motorState[motor2.Name()]["mlToStep1"] =
+                            motor2.m_volToStepCoefs[0];
+                    motorState[motor2.Name()]["mlToStep2"] =
+                            motor2.m_volToStepCoefs[1];
+                    motorState[motor2.Name()]["mlToStep5"] =
+                            motor2.m_volToStepCoefs[2];
 
-                    ofs << j.dump(4);
+                    ofs << motorState.dump(4);
                 }
             }
             ImGui::SameLine();
@@ -504,6 +506,107 @@ namespace nema
             }
 
             ImGui::PopItemWidth();
+        }
+        ImGui::End();
+    }
+
+    void GUI::ShowDumperControls()
+    {
+        if (ImGui::Begin("Dumper Controls", &m_bShowDumper))
+        {
+            ULONG size = 10;
+            std::vector<ULONG> coms(size);
+            ULONG found = 0;
+
+            GetCommPorts(coms.data(), size, &found);
+            ::ranges::sort(coms.begin(), coms.end());
+            auto portStrs = coms |
+                            ::ranges::views::filter([](auto comNum)
+                                                    { return comNum != 0; }) |
+                            ::ranges::views::transform(
+                                    [](auto comNum)
+                                    { return fmt::format("COM{}", comNum); }) |
+                            ::ranges::to<std::vector<std::string>>();
+
+            const int numPorts = static_cast<int>(portStrs.size());
+            static MyMotor dumper{"dumper"};
+            static auto currentPort = numPorts - 1;
+
+            ImGui::PushItemWidth(m_inputFieldWidth);
+            if (numPorts > 0)
+            {
+                Combo("Motor port", &currentPort, portStrs,
+                      static_cast<int>(portStrs.size()));
+
+                if (ImGui::Button("Connect", ImVec2(m_inputFieldWidth, 30.f)))
+                {
+                    dumper.Connect(
+                            fmt::format("\\\\.\\{}", portStrs[currentPort]),
+                            CBR_9600);
+                }
+            }
+
+            if (!dumper.IsConnected())
+            {
+                ImGui::Text("Please connect the motor\n");
+                ImGui::BeginDisabled();
+            }
+
+            static std::vector<std::string> syringes{"1 ml", "2 ml", "5 ml"};
+            static std::vector<float> syringeVolumes{1.0f, 2.0f, 5.0f};
+            static std::vector<std::string> modes{"FULL", "1/2",  "1/4",
+                                                  "1/8",  "1/16", "1/32"};
+
+            ImGui::BeginGroup();
+            Combo("Syringe", (int*) &dumper.m_currentSyringe, syringes,
+                  static_cast<int>(syringes.size()));
+            Combo("Driver mode", (int*) &dumper.m_currentDriverMode, modes,
+                  static_cast<int>(modes.size()));
+            ImGui::EndGroup();
+
+            ImGui::Dummy(ImVec2(0.f, 20.f));
+
+            ImGui::BeginGroup();
+            ImGui::DragFloat("vol to step coef",
+                             &dumper.m_volToStepCoefs[dumper.m_currentSyringe],
+                             0.5, 2000, 15000);
+            ImGui::SameLine();
+            HelpMarker("These coefficients are used to convert from "
+                       "milliliters to motor steps\n");
+            if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                if (auto ofs = std::ofstream{dumper.GetSetupPath()})
+                {
+                    motorState[dumper.Name()]["mlToStep1"] =
+                            dumper.m_volToStepCoefs[0];
+                    motorState[dumper.Name()]["mlToStep2"] =
+                            dumper.m_volToStepCoefs[1];
+                    motorState[dumper.Name()]["mlToStep5"] =
+                            dumper.m_volToStepCoefs[2];
+
+                    ofs << motorState.dump(4);
+                }
+            }
+            static float speed = 23.0;
+            ImGui::DragFloat("Speed", &speed, 0.5, 0, 30);
+            ImGui::SameLine();
+            HelpMarker("milliliters per minute");
+            static int amount = 5;
+            ImGui::DragInt("Amount in percent", &amount, 1, 0, 100);
+            ImGui::EndGroup();
+
+            ImGui::Dummy(ImVec2(0.f, 20.f));
+
+            if (ImGui::Button("Dump", ImVec2(150.f, 40.f)))
+            {
+                dumper.Go(amount / 100.f *
+                                  syringeVolumes[dumper.m_currentSyringe],
+                          speed);
+            }
+
+            ImGui::PopItemWidth();
+
+            if (!dumper.IsConnected()) { ImGui::EndDisabled(); }
         }
         ImGui::End();
     }

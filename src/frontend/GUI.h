@@ -21,7 +21,7 @@ namespace nema
             : m_window(window), m_dt(dt), m_bShowMainMenuBar(true),
               m_bShowAppLog(true), m_appLog(log), m_hubballiFont(),
               m_currentTexture(texture), m_textureMutex(mutex),
-              m_bShowMotors(true)
+              m_bShowMotors(true), m_bShowDumper(false)
         {
         }
 
@@ -68,6 +68,11 @@ namespace nema
         void ShowMotorControls();
 
         /**
+         * Draws controls for the stepper motor that dumps bad liquid
+        */
+        void ShowDumperControls();
+
+        /**
          * Helper to display a little (?) mark which shows a tooltip when hovered.
          *
          * @param desc CString to display
@@ -94,7 +99,8 @@ namespace nema
         {
             return ImGui::Combo(
                     label, current_item,
-                    [](void* data, int idx, const char** out_text) {
+                    [](void* data, int idx, const char** out_text)
+                    {
                         *out_text =
                                 (*(const std::vector<std::string>*) data)[idx]
                                         .c_str();
@@ -125,6 +131,7 @@ namespace nema
         bool m_bShowMainMenuBar;
         bool m_bShowAppLog;
         bool m_bShowMotors;
+        bool m_bShowDumper;
 
         /// Width for input fields in the GUI
         const uint16_t m_inputFieldWidth = 150;
@@ -143,5 +150,7 @@ namespace nema
 
         void HandleInputCommands(MyMotor& m1, MyMotor& m2, uint32_t selected,
                                  float speed1, float speed2);
+
+        nlohmann::json motorState{};
     };
 }// namespace nema
