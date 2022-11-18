@@ -38,7 +38,7 @@ int main()
         spdlog::debug("Logger setup in main");
 
         const auto width = 1400;
-        const auto height = 600;
+        const auto height = 800;
         const auto antialiasingLevel = 8;
 
         sf::ContextSettings settings{};

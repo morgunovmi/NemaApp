@@ -16,12 +16,22 @@ namespace nema
 
         auto& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        m_hubballiFont = io.Fonts->AddFontFromFileTTF(FONT_PATH.c_str(), 20);
+        m_hubballiFont = io.Fonts->AddFontFromFileTTF(
+                "./resources/fonts/Montserrat-Light.ttf", 20);
         ImGui::SFML::UpdateFontTexture();
-        spdlog::debug("Font loaded from {}", FONT_PATH);
 
-        ImGui::GetStyle().FrameRounding = 4.0f;
-        ImGui::GetStyle().GrabRounding = 4.0f;
+        auto& style = ImGui::GetStyle();
+        style.WindowPadding = {10.f, 10.f};
+        style.FrameRounding = 6.0f;
+        style.GrabRounding = 12.0f;
+        style.FramePadding = ImVec2(12, 5);
+        style.ItemSpacing = ImVec2(10, 6);
+        style.ItemInnerSpacing = ImVec2(6, 4);
+        style.ScrollbarSize = 20.f;
+        style.GrabMinSize = 18.f;
+
+        style.WindowRounding = 12.f;
+        style.ScrollbarRounding = 0.f;
 
         ImVec4* colors = ImGui::GetStyle().Colors;
         colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
@@ -369,8 +379,11 @@ namespace nema
                     }
                 }
                 ImGui::EndGroup();
-                ImGui::Dummy(ImVec2(0.f, 20.f));
             }
+
+            ImGui::Dummy({0.f, 10.f});
+            ImGui::Text("Equipment setup");
+            ImGui::Separator();
 
             static std::vector<std::string> syringes{"1 ml", "2 ml", "5 ml"};
             static std::vector<std::string> modes{"FULL", "1/2",  "1/4",
@@ -391,8 +404,9 @@ namespace nema
                   static_cast<int>(modes.size()));
             ImGui::EndGroup();
 
-            ImGui::Dummy(ImVec2(0.f, 20.f));
-
+            ImGui::Dummy({0.f, 10.f});
+            ImGui::Text("Motion parameters");
+            ImGui::Separator();
 
             ImGui::BeginGroup();
             ImGui::DragFloat("vol to step coef 1",
@@ -452,7 +466,9 @@ namespace nema
             HelpMarker("milliliters");
             ImGui::EndGroup();
 
-            ImGui::Dummy(ImVec2(0.f, 20.f));
+            ImGui::Dummy({0.f, 10.f});
+            ImGui::Text("Motion control");
+            ImGui::Separator();
 
             ImGui::BeginGroup();
             if (ImGui::Button("Forward 1", ImVec2(150.f, 40.f)))
@@ -493,10 +509,20 @@ namespace nema
                 motor2.Stop();
             }
 
+            ImGui::Dummy({0.f, 10.f});
+            ImGui::Text("Keyboard control");
+            ImGui::Separator();
+
             static int selected = 0;
             std::vector<std::string> motors{"Motor 1", "Motor 2"};
             Combo("Keyboard controlled motor", &selected, motors,
                   static_cast<int>(motors.size()));
+            ImGui::TextColored(
+                    {0.0, 0.8, 0.0, 1.0},
+                    "Use <- and -> buttons for fine control of selected motor");
+            ImGui::TextColored({0.0, 0.8, 0.0, 1.0},
+                               "Use Spacebar to stop both motors");
+
 
             HandleInputCommands(motor1, motor2, selected, speed1, speed2);
 
