@@ -385,7 +385,9 @@ namespace nema
             ImGui::Text("Equipment setup");
             ImGui::Separator();
 
-            static std::vector<std::string> syringes{"1 ml", "2 ml", "5 ml"};
+            static std::vector<std::string> syringes{"1 ml",  "2 ml",  "5 ml",
+                                                     "10 ml", "15 ml", "20 ml",
+                                                     "25 ml", "50 ml"};
             static std::vector<std::string> modes{"FULL", "1/2",  "1/4",
                                                   "1/8",  "1/16", "1/32"};
 
@@ -422,6 +424,16 @@ namespace nema
                             motor1.m_volToStepCoefs[1];
                     motorState[motor1.Name()]["mlToStep5"] =
                             motor1.m_volToStepCoefs[2];
+                    motorState[motor1.Name()]["mlToStep10"] =
+                            motor1.m_volToStepCoefs[3];
+                    motorState[motor1.Name()]["mlToStep15"] =
+                            motor1.m_volToStepCoefs[4];
+                    motorState[motor1.Name()]["mlToStep20"] =
+                            motor1.m_volToStepCoefs[5];
+                    motorState[motor1.Name()]["mlToStep25"] =
+                            motor1.m_volToStepCoefs[6];
+                    motorState[motor1.Name()]["mlToStep50"] =
+                            motor1.m_volToStepCoefs[7];
 
                     ofs << motorState.dump(4);
                 }
@@ -447,6 +459,16 @@ namespace nema
                             motor2.m_volToStepCoefs[1];
                     motorState[motor2.Name()]["mlToStep5"] =
                             motor2.m_volToStepCoefs[2];
+                    motorState[motor2.Name()]["mlToStep10"] =
+                            motor2.m_volToStepCoefs[3];
+                    motorState[motor2.Name()]["mlToStep15"] =
+                            motor2.m_volToStepCoefs[4];
+                    motorState[motor2.Name()]["mlToStep20"] =
+                            motor2.m_volToStepCoefs[5];
+                    motorState[motor2.Name()]["mlToStep25"] =
+                            motor2.m_volToStepCoefs[6];
+                    motorState[motor2.Name()]["mlToStep50"] =
+                            motor2.m_volToStepCoefs[7];
 
                     ofs << motorState.dump(4);
                 }

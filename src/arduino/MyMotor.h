@@ -9,7 +9,13 @@ enum eSyringeType
 {
     ONE_ML,
     TWO_ML,
-    FIVE_ML
+    FIVE_ML,
+    TEN_ML,
+    FTEEN_ML,
+    TWENTY_ML,
+    TWFIVE_ML,
+    FIFTY_ML,
+    SYRINGE_MAX
 };
 
 enum eDriverMode
@@ -29,7 +35,9 @@ class MyMotor
 public:
     MyMotor(const std::string& name)
         : m_name(name), m_currentSyringe(FIVE_ML),
-          m_currentDriverMode(ONE_OVER_32), m_volToStepCoefs{4285, 4285, 4285}
+          m_currentDriverMode(ONE_OVER_32), m_volToStepCoefs{4285, 4285, 4285,
+                                                             4285, 4285, 4285,
+                                                             4285, 4285}
     {
         // spdlog::info("Before loading");
         LoadCoeffs();
@@ -40,7 +48,9 @@ public:
             DWORD COM_BAUD_RATE)
         : m_serial(com_port, COM_BAUD_RATE), m_currentSyringe(FIVE_ML),
           m_name(name),
-          m_currentDriverMode(ONE_OVER_32), m_volToStepCoefs{4285, 4285, 4285}
+          m_currentDriverMode(ONE_OVER_32), m_volToStepCoefs{4285, 4285, 4285,
+                                                             4285, 4285, 4285,
+                                                             4285, 4285}
     {
         LoadCoeffs();
     }
@@ -58,6 +68,11 @@ public:
                     j.at(m_name).at("mlToStep1").get_to(m_volToStepCoefs[0]);
                     j.at(m_name).at("mlToStep2").get_to(m_volToStepCoefs[1]);
                     j.at(m_name).at("mlToStep5").get_to(m_volToStepCoefs[2]);
+                    j.at(m_name).at("mlToStep10").get_to(m_volToStepCoefs[3]);
+                    j.at(m_name).at("mlToStep15").get_to(m_volToStepCoefs[4]);
+                    j.at(m_name).at("mlToStep20").get_to(m_volToStepCoefs[5]);
+                    j.at(m_name).at("mlToStep25").get_to(m_volToStepCoefs[6]);
+                    j.at(m_name).at("mlToStep50").get_to(m_volToStepCoefs[7]);
                 }
             }
         }
@@ -115,7 +130,7 @@ public:
 
     std::string GetSetupPath() const { return SETUP_PATH; }
 
-    std::array<float, 3> m_volToStepCoefs{};
+    std::array<float, 8> m_volToStepCoefs{};
     eSyringeType m_currentSyringe;
     eDriverMode m_currentDriverMode;
 
